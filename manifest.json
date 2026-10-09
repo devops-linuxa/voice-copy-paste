@@ -1,0 +1,22 @@
+
+{
+  "manifest_version": 3,
+  "name": "Speech to Text RU EN",
+  "version": "1.0.0",
+  "description": "Бесплатная диктовка на русском и английском",
+  "permissions": [
+    "activeTab",
+    "clipboardWrite"
+  ],
+  "action": {
+    "default_title": "Speech to Text",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

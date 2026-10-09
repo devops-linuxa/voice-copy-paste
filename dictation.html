@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Диктовка — Speech to Text</title>
+  <style>
+    body {
+      font: 16px sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    button, select { padding: 10px; margin: 4px; }
+    textarea {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 300px;
+      margin-top: 16px;
+      padding: 12px;
+      font: 17px sans-serif;
+    }
+    #status { margin: 12px 4px; }
+  </style>
+</head>
+<body>
+  <h2>Диктовка речи</h2>
+  <p>Выбери язык, нажми «Начать» и разреши доступ к микрофону, если Chrome спросит.</p>
+
+  <label for="language">Язык:</label>
+  <select id="language">
+    <option value="ru-RU">Русский</option>
+    <option value="en-US">English (US)</option>
+    <option value="en-GB">English (UK)</option>
+  </select>
+
+  <div>
+    <button id="start">Начать</button>
+    <button id="stop" disabled>Остановить</button>
+    <button id="copy">Копировать текст</button>
+    <button id="insert">Вставить в исходную вкладку</button>
+  </div>
+
+  <div id="status">Готово к запуску.</div>
+  <textarea id="text" placeholder="Здесь появится распознанная речь..."></textarea>
+
+  <script src="dictation.js"></script>
+</body>
+</html>
