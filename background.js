@@ -26,7 +26,8 @@ chrome.commands.onCommand.addListener(async (command) => {
       url: dictationUrl +
         "?lang=" + encodeURIComponent(language) +
         "&hotkey=1",
-      active: false
+      active: false,
+      pinned: true
     });
   } catch (error) {
     console.error("Dictation error:", error);
