@@ -1,4 +1,3 @@
-
 const params = new URLSearchParams(location.search);
 const languageSelect = document.getElementById("language");
 const textArea = document.getElementById("text");
@@ -7,6 +6,8 @@ const startButton = document.getElementById("start");
 const stopButton = document.getElementById("stop");
 
 const autoStart = params.get("hotkey") === "1";
+const targetTabId = Number(params.get("target") || -1);
+
 languageSelect.value = params.get("lang") || "ru-RU";
 
 const SpeechRecognition =
@@ -23,9 +24,21 @@ function setStatus(message) {
   status.textContent = message;
 }
 
+function updateOverlay(text, message = "Идёт запись...") {
+  if (targetTabId < 0) return;
+
+  chrome.runtime.sendMessage({
+    type: "DICTATION_OVERLAY_UPDATE",
+    targetTabId,
+    text,
+    status: message
+  }).catch(() => {});
+}
+
 function startRecognition() {
   if (!SpeechRecognition) {
-    setStatus("Web Speech API не поддерживается.");
+    setStatus("Распознавание речи не поддерживается этим браузером.");
+    updateOverlay("", "Распознавание не поддерживается");
     return;
   }
 
@@ -36,7 +49,9 @@ function startRecognition() {
   running = true;
   startButton.disabled = true;
   stopButton.disabled = false;
+
   setStatus("Запускаю распознавание...");
+  updateOverlay("", "Запускаю распознавание...");
 
   createRecognition();
 }
@@ -46,12 +61,14 @@ function createRecognition() {
 
   const current = new SpeechRecognition();
   recognition = current;
+
   current.lang = languageSelect.value;
   current.continuous = true;
   current.interimResults = true;
 
   current.onstart = () => {
     setStatus("Идёт запись...");
+    updateOverlay(textArea.value);
   };
 
   current.onresult = (event) => {
@@ -68,17 +85,21 @@ function createRecognition() {
     }
 
     textArea.value = finalText + interim;
+    updateOverlay(textArea.value);
   };
 
   current.onerror = (event) => {
     setStatus("Ошибка распознавания: " + event.error);
+    updateOverlay(textArea.value, "Ошибка: " + event.error);
 
-    if ([
-      "not-allowed",
-      "service-not-allowed",
-      "audio-capture",
-      "language-not-supported"
-    ].includes(event.error)) {
+    if (
+      [
+        "not-allowed",
+        "service-not-allowed",
+        "audio-capture",
+        "language-not-supported"
+      ].includes(event.error)
+    ) {
       running = false;
       startButton.disabled = false;
       stopButton.disabled = true;
@@ -99,7 +120,9 @@ function createRecognition() {
     running = false;
     startButton.disabled = false;
     stopButton.disabled = true;
-    setStatus("Не удалось запустить: " + error.message);
+
+    setStatus("Не удалось запустить распознавание: " + error.message);
+    updateOverlay(textArea.value, "Не удалось запустить распознавание");
   }
 }
 
@@ -119,7 +142,7 @@ function copyText(text) {
     try {
       copied = document.execCommand("copy");
     } catch (error) {
-      console.error("execCommand copy:", error);
+      console.error("Ошибка копирования:", error);
     }
 
     if (copied) {
@@ -152,29 +175,26 @@ async function stopRecognition() {
       } catch (_) {}
     }
 
-    // Ждём финальные результаты речи.
+    // Даём браузеру время передать последние распознанные слова.
     await new Promise(resolve => setTimeout(resolve, 1200));
 
     const text = textArea.value.trim();
     const copied = await copyText(text);
 
     if (!copied) {
-      setStatus("Ошибка копирования. Текст оставлен на странице.");
+      setStatus("Не удалось скопировать текст. Он остался в окне диктовки.");
+      updateOverlay(text, "Ошибка копирования");
       stopping = false;
       stopPromise = null;
       return;
     }
 
-    setStatus("Текст скопирован. Закрываю вкладку...");
+    setStatus("Текст скопирован. Закрываю окно...");
 
-    chrome.runtime.sendMessage(
-      { type: "DICTATION_STOPPED" },
-      () => {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError.message);
-        }
-      }
-    );
+    chrome.runtime.sendMessage({
+      type: "DICTATION_STOPPED",
+      targetTabId
+    });
   })();
 
   return stopPromise;
