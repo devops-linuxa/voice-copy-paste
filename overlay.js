@@ -52,6 +52,14 @@
         overflow-wrap: anywhere;
         white-space: pre-wrap;
         line-height: 1.5;
+        max-height: calc(50vh - 75px);
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .text::-webkit-scrollbar {
+        display: none;
       }
 
       .text:empty {
@@ -78,6 +86,7 @@
       host.style.display = "none";
       statusElement.textContent = "Идёт запись...";
       textElement.textContent = "";
+      textElement.scrollTop = 0;
       return;
     }
 
@@ -93,11 +102,15 @@
       statusElement.textContent = "Идёт запись...";
       textElement.textContent = text;
       host.style.display = "block";
+
+      // Держим последнюю строку видимой, автоматически сдвигая текст вверх.
+      textElement.scrollTop = textElement.scrollHeight;
     }
 
     if (message.type === "DICTATION_OVERLAY_HIDE") {
       host.style.display = "none";
       textElement.textContent = "";
+      textElement.scrollTop = 0;
     }
   });
 })();
